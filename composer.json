@@ -1,0 +1,16 @@
+{
+    "require": {
+        "guzzlehttp/guzzle": "~4",
+        "symfony/dom-crawler": "~2",
+        "fabpot/goutte": "2.0.*@dev",
+        "phpoffice/phpexcel": "dev-master"
+    },
+    "autoload": {
+        "classmap": [
+            "lib"
+        ],
+        "psr-0": {
+            "KarmaTek": "lib"
+        }
+    }
+}
