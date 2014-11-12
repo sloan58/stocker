@@ -1,2 +1,4 @@
 /vendor
 stocker.xlsx
+.idea/
+.DS_Store

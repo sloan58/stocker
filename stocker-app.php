@@ -11,7 +11,7 @@ use lib\KarmaTek\Stocker;
 $companies = file('companies.txt', FILE_IGNORE_NEW_LINES);
 
 //Set column range and starting row
-$columns = range('A','E');
+$columns = range('A','F');
 $row = '1';
 
 // Create Goutte client
@@ -19,7 +19,7 @@ $client = new Client();
 
 // Create PhpExcel Object
 $objPHPExcel = new PHPExcel();
-
+$objPHPExcel->getActiveSheet()->setCellValueExplicit();
 // Set excel worksheet high level properties
 $objPHPExcel->getProperties()->setCreator("Stocker App");
 $objPHPExcel->getProperties()->setLastModifiedBy("Stocker App");
@@ -27,7 +27,7 @@ $objPHPExcel->getProperties()->setTitle("An app to track stock data (Title)");
 $objPHPExcel->getProperties()->setSubject("An app to track stock data (Subject)");
 $objPHPExcel->getProperties()->setDescription("An app to track stock data (Description)");
 
-// Set title 'Leveraged Free Cash Flow' for tab 1 (created by default)
+// Set title 'Leveraged Free Cash Flow' for tab 1 (tab 1 is created by default)
 $objPHPExcel->setActiveSheetIndex(0);
 $objPHPExcel->getActiveSheet()->setTitle('Leveraged Free Cash Flow');
 
@@ -72,7 +72,7 @@ if ($parentTable = $crawler->filter('table.yfnc_tabledata1 td table'))
     });
 
     // Set last column header to 'Company'
-    $qtlyHeaders[] = 'Company';
+    $qtlyHeaders[] = 'Total';
 
     // Generate PHPExcel data for column headers on each tab
     for ($j=0;$j<=2;$j++)

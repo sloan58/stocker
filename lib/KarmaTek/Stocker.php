@@ -16,8 +16,9 @@ class Stocker {
 
         // Create Total Cash Flow From Operating Activities
         $tcffoa = [];
+
         $parentTable->filter('tr')->eq(11)->filter('td strong')->each(function ($node) use (&$tcffoa) {
-            $tcffoa[] = trim(str_replace(['(',')',',','-'],'',$node->text()));
+            $tcffoa[] = self::cleanStr($node->text());
         });
 
 
@@ -29,39 +30,21 @@ class Stocker {
 
             $parentTable->filter('tr')->eq(14)->filter('td')->each(function ($node) use (&$capex,&$company) {
 
-                $capex[] = trim(str_replace(['(',')',',','-'],'',$node->text()));
+                $capex[] = self::cleanStr($node->text());
 
             });
 
         }
 
         // Create Leveraged Free Cash Flow
-        $lfcf = [];
-        for ($i=0;$i<count($columns);$i++)
-        {
-            if ($i == 0)
-            {
+        $lfcf = self::calculateQuarter($columns,$company,$tcffoa,$capex,'-');
 
-                $lfcf[] = $company;
-
-            } elseif (!isset($tcffoa[$i]) || !isset($capex[$i])) {
-
-                $lfcf[$i] = 'No Data Available';
-
-            } else {
-
-                $lfcf[$i] = $tcffoa[$i] - $capex[$i];
-
-            }
-        }
+        // Sum all 4 quarters
+        $lfcf_total = self::sumArray($lfcf);
 
         // Write cell content for Leveraged Free Cash Flow
-        for ($i=0;$i<count($columns);$i++)
-        {
-            $objPHPExcel->getActiveSheet()->SetCellValue($columns[$i] . $row, $lfcf[$i]);
-        }
+        self::writeData($objPHPExcel,$columns,$row,$lfcf,$lfcf_total);
 
-        return true;
     }
 
     public static function CashAndEquiv($parentTable,$objPHPExcel,$company,$columns,$row)
@@ -71,7 +54,7 @@ class Stocker {
         $cce = [];
 
         $parentTable->filter('tr')->eq(4)->filter('td')->each(function ($node) use (&$cce) {
-            $cce[] = trim(str_replace(['(',')',',','-'],'',$node->text()));
+            $cce[] = self::cleanStr($node->text());
         });
 
         // Yahoo! buffer <td>
@@ -81,41 +64,20 @@ class Stocker {
         $sti = [];
 
         $parentTable->filter('tr')->eq(5)->filter('td')->each(function ($node) use (&$sti) {
-            $sti[] = trim(str_replace(['(',')',',','-'],'',$node->text()));
+            $sti[] = self::cleanStr($node->text());
         });
 
         // Yahoo! buffer <td>
         array_shift($sti);
 
         // Create Cash & Equivalents
-        $ce = [];
-        for ($i=0;$i<count($columns);$i++)
-        {
+        $ce = self::calculateQuarter($columns,$company,$cce,$sti);
 
-            if ($i == 0)
-            {
+        // Sum all 4 quarters
+        $ce_total = self::sumArray($ce);
 
-                $ce[] = $company;
-
-            } elseif (!isset($cce[$i]) || !isset($sti[$i])) {
-
-                $ce[$i] = 'No Data Available';
-
-            } else {
-
-                $ce[$i] = $cce[$i] + $sti[$i];
-
-            }
-
-        }
-
-        // Write cell content for Leveraged Free Cash Flow
-        for ($i=0;$i<count($columns);$i++)
-        {
-            $objPHPExcel->getActiveSheet()->SetCellValue($columns[$i] . $row, $ce[$i]);
-        }
-
-        return true;
+        // Write cell content for Cash and Equivalents
+        self::writeData($objPHPExcel,$columns,$row,$ce,$ce_total);
 
     }
 
@@ -130,7 +92,7 @@ class Stocker {
         {
 
             $parentTable->filter('tr')->eq(24)->filter('td')->each(function ($node) use (&$scltd) {
-                $scltd[] = trim(str_replace(['(',')',',','-'],'',$node->text()));
+                $scltd[] = self::cleanStr($node->text());
             });
 
         }
@@ -146,41 +108,84 @@ class Stocker {
         {
 
             $parentTable->filter('tr')->eq(28)->filter('td')->each(function ($node) use (&$ltd) {
-                $ltd[] = trim(str_replace(['(',')',',','-'],'',$node->text()));
+                $ltd[] = self::cleanStr($node->text());
             });
 
         }
 
 
         // Create Debt
-        $debt = [];
+        $debt = self::calculateQuarter($columns,$company,$scltd,$ltd);
+
+        // Sum all 4 quarters
+        $debt_total = self::sumArray($debt);
+
+        // Write cell content for Debt
+        self::writeData($objPHPExcel,$columns,$row,$debt,$debt_total);
+
+    }
+
+    /**
+     * Private Functions
+     *
+     */
+    private static function cleanStr($sting)
+    {
+        return trim(str_replace(['(',')',',','-'],'',$sting));
+    }
+
+    private static function calculateQuarter($columns,$company,$array1,$array2,$plus_minus = '+')
+    {
+        $results = [];
         for ($i=0;$i<count($columns);$i++)
         {
 
             if ($i == 0)
             {
 
-                $debt[] = $company;
+                $results[] = $company;
 
-            } elseif (!isset($scltd[$i]) || !isset($ltd[$i])) {
+            } elseif (!isset($array1[$i]) || !isset($array2[$i])) {
 
-                $debt[$i] = 'No Data Available';
+                $results[$i] = 'No Data Available';
 
             } else {
 
-                $debt[$i] = $scltd[$i] + $ltd[$i];
+                switch($plus_minus)
+                {
+
+                    case '+':
+
+                        $results[$i] = ($array1[$i] + $array2[$i]) * 1000;
+                        break;
+
+                    case '-':
+
+                        $results[$i] = ($array1[$i] - $array2[$i]) * 1000;
+                        break;
+                }
 
             }
-
         }
+        return $results;
+    }
 
-        // Write cell content for Leveraged Free Cash Flow
+    private static function sumArray($array)
+    {
+        return array_sum([$array[1],$array[2],$array[3],$array[4]]);
+    }
+
+    private static function writeData($objPHPExcel,$columns,$row,$array,$total)
+    {
+        // Write cell content for each quarter
         for ($i=0;$i<count($columns);$i++)
         {
-            $objPHPExcel->getActiveSheet()->SetCellValue($columns[$i] . $row, $debt[$i]);
+            $objPHPExcel->getActiveSheet()->SetCellValue($columns[$i] . $row, $array[$i]);
         }
 
-        return true;
+        // Write total for 4 quarters
+        $objPHPExcel->getActiveSheet()->SetCellValue($columns[count($columns) - 1] . $row, $total);
 
+        return true;
     }
 } 
