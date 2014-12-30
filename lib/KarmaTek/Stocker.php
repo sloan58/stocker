@@ -48,6 +48,8 @@ class Stocker {
         // Write totals in the 'Totals' tab
         self::writeTotalsData($objPHPExcel,'B',$row,$company,$lfcf_total);
 
+        return $lfcf_total;
+
     }
 
     public static function CashAndEquiv($parentTable,$objPHPExcel,$company,$columns,$row)
@@ -84,6 +86,8 @@ class Stocker {
 
         // Write totals in the 'Totals' tab
         self::writeTotalsData($objPHPExcel,'C',$row,$company,$ce_total);
+
+        return $ce[1];
 
     }
 
@@ -132,15 +136,17 @@ class Stocker {
         // Write totals in the 'Totals' tab
         self::writeTotalsData($objPHPExcel,'D',$row,$company,$debt_total);
 
+        return $debt[1];
+
     }
 
     /**
      * Private Functions
      *
      */
-    private static function cleanStr($sting)
+    private static function cleanStr($string)
     {
-        return trim(str_replace(['(',')',',','-'],'',$sting));
+        return trim(str_replace(['(',')',',','-'],'',$string));
     }
 
     private static function calculateQuarter($columns,$company,$array1,$array2,$plus_minus = '+')
@@ -181,6 +187,11 @@ class Stocker {
 
     private static function sumArray($array)
     {
+        if (!is_numeric($array[1]) && !is_numeric($array[2]) && !is_numeric($array[3]) && !is_numeric($array[4]))
+        {
+            return "No Data Available";
+        }
+
         return array_sum([$array[1],$array[2],$array[3],$array[4]]);
     }
 
@@ -209,4 +220,5 @@ class Stocker {
         // Write total for 4 quarters
         $objPHPExcel->getActiveSheet()->SetCellValue($column . $row, $total);
     }
-} 
+
+}

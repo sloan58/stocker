@@ -54,6 +54,42 @@ $objPHPExcel->getActiveSheet()->SetCellValue('D1', 'Debt');
 // Set handle back to tab 1
 $objPHPExcel->setActiveSheetIndex(0);
 
+//Open SAS Spreadsheet and set active sheet to zero
+$objReader = new PHPExcel_Reader_Excel2007();
+$objSAS_PHPExcel = $objReader->load("SAS.xlsx");
+$objSAS_PHPExcel->setActiveSheetIndex(0);
+
+//Get highest row nad column information
+$highestRow = $objSAS_PHPExcel->getActiveSheet()->getHighestRow();
+$highestCol = $objSAS_PHPExcel->getActiveSheet()->getHighestColumn();
+$highestColIndex = PHPExcel_Cell::columnIndexFromString($highestCol);
+
+// Find where headers exist in Row 1
+for ($i=1; $i<=$highestColIndex;$i++)
+{
+    $letter = PHPExcel_Cell::stringFromColumnIndex($i);
+
+    $val = $objSAS_PHPExcel->getActiveSheet()->getCell($letter . '1')->getValue();
+
+    switch($val)
+    {
+
+        case "LFCF":
+            $lfcf_header = $letter;
+            break;
+
+        case "C&E":
+            $ce_header = $letter;
+            break;
+
+        case "Debt":
+            $debt_header = $letter;
+            break;
+
+    }
+
+}
+
 // Start App
 print "Getting Quarterly Headers....\n";
 
@@ -109,9 +145,11 @@ if ($parentTable = $crawler->filter('table.yfnc_tabledata1 td table'))
 }
 
 // Begin iterating companies from the input file
-foreach ($companies as $company)
+for ($i=2; $i<=$highestRow;$i++)
+//for ($i=2; $i<=3;$i++)
 {
     //  cli status
+    $company = $objSAS_PHPExcel->getActiveSheet()->getCell('A' . $i)->getValue();
     print "Processing $company....\n";
 
     try {
@@ -136,7 +174,11 @@ foreach ($companies as $company)
         $objPHPExcel->setActiveSheetIndex(0);
 
         // Run Stocker method to generate 'Leveraged Free Cash Flow'
-        Stocker::LevFreeCash($parentTable,$objPHPExcel,$company,$columns,$row);
+        $lfcf_total = Stocker::LevFreeCash($parentTable,$objPHPExcel,$company,$columns,$row);
+
+        // Update SAS Spreadsheet with total 'Leveraged Free Cash Flow'
+        $col = PHPExcel_Cell::stringFromColumnIndex($highestColIndex);
+        $objSAS_PHPExcel->getActiveSheet()->SetCellValue($lfcf_header . $i, $lfcf_total == 0 ? "No Data Available" : $lfcf_total);
 
     }
 
@@ -162,13 +204,21 @@ foreach ($companies as $company)
         $objPHPExcel->setActiveSheetIndex(1);
 
         // Run Stocker method to generate 'Cash & Equivalents'
-        Stocker::CashAndEquiv($parentTable,$objPHPExcel,$company,$columns,$row);
+        $ce_total = Stocker::CashAndEquiv($parentTable,$objPHPExcel,$company,$columns,$row);
+
+        // Update SAS Spreadsheet with total 'Cash & Equivalents'
+        $col++;
+        $objSAS_PHPExcel->getActiveSheet()->SetCellValue($ce_header . $i, $ce_total);
 
         // Set active sheet to 'Debt'
         $objPHPExcel->setActiveSheetIndex(2);
 
         // Run Stocker method to generate 'Debt'
-        Stocker::Debt($parentTable,$objPHPExcel,$company,$columns,$row);
+        $debt_total = Stocker::Debt($parentTable,$objPHPExcel,$company,$columns,$row);
+
+        // Update SAS Spreadsheet with total 'Debt'
+        $col++;
+        $objSAS_PHPExcel->getActiveSheet()->SetCellValue($debt_header . $i, $debt_total);
 
     }
 
@@ -180,3 +230,6 @@ foreach ($companies as $company)
 $objPHPExcel->setActiveSheetIndex(0);
 $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
 $objWriter->save("stocker.xlsx");
+
+$objWriter_SAS = new PHPExcel_Writer_Excel2007($objSAS_PHPExcel);
+$objWriter_SAS->save("SAS-Stocker.xlsx");
