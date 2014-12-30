@@ -20,6 +20,7 @@ $client = new Client();
 // Create PhpExcel Object
 $objPHPExcel = new PHPExcel();
 $objPHPExcel->getActiveSheet()->setCellValueExplicit();
+
 // Set excel worksheet high level properties
 $objPHPExcel->getProperties()->setCreator("Stocker App");
 $objPHPExcel->getProperties()->setLastModifiedBy("Stocker App");
@@ -36,10 +37,19 @@ $objPHPExcel->createSheet();
 $objPHPExcel->setActiveSheetIndex(1);
 $objPHPExcel->getActiveSheet()->setTitle('Cash & Equivalents');
 
-// Create tab 3 an set title as 'Debt'
+// Create tab 3 and set title as 'Debt'
 $objPHPExcel->createSheet();
 $objPHPExcel->setActiveSheetIndex(2);
 $objPHPExcel->getActiveSheet()->setTitle('Debt');
+
+// Create tab 4 and set title as 'Totals'.  Create headers for this tab as well
+$objPHPExcel->createSheet();
+$objPHPExcel->setActiveSheetIndex(3);
+$objPHPExcel->getActiveSheet()->setTitle('Totals');
+$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'Company');
+$objPHPExcel->getActiveSheet()->SetCellValue('B1', 'LFCF');
+$objPHPExcel->getActiveSheet()->SetCellValue('C1', 'Cash and Equiv');
+$objPHPExcel->getActiveSheet()->SetCellValue('D1', 'Debt');
 
 // Set handle back to tab 1
 $objPHPExcel->setActiveSheetIndex(0);

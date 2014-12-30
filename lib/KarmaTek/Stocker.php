@@ -45,6 +45,9 @@ class Stocker {
         // Write cell content for Leveraged Free Cash Flow
         self::writeData($objPHPExcel,$columns,$row,$lfcf,$lfcf_total);
 
+        // Write totals in the 'Totals' tab
+        self::writeTotalsData($objPHPExcel,'B',$row,$company,$lfcf_total);
+
     }
 
     public static function CashAndEquiv($parentTable,$objPHPExcel,$company,$columns,$row)
@@ -78,6 +81,9 @@ class Stocker {
 
         // Write cell content for Cash and Equivalents
         self::writeData($objPHPExcel,$columns,$row,$ce,$ce_total);
+
+        // Write totals in the 'Totals' tab
+        self::writeTotalsData($objPHPExcel,'C',$row,$company,$ce_total);
 
     }
 
@@ -122,6 +128,9 @@ class Stocker {
 
         // Write cell content for Debt
         self::writeData($objPHPExcel,$columns,$row,$debt,$debt_total);
+
+        // Write totals in the 'Totals' tab
+        self::writeTotalsData($objPHPExcel,'D',$row,$company,$debt_total);
 
     }
 
@@ -187,5 +196,17 @@ class Stocker {
         $objPHPExcel->getActiveSheet()->SetCellValue($columns[count($columns) - 1] . $row, $total);
 
         return true;
+    }
+
+    private static function writeTotalsData($objPHPExcel,$column,$row,$company,$total)
+    {
+        // Grab 'Totals' tab
+        $objPHPExcel->setActiveSheetIndex(3);
+
+        // Record the company name
+        $objPHPExcel->getActiveSheet()->SetCellValue('A' . $row, $company);
+
+        // Write total for 4 quarters
+        $objPHPExcel->getActiveSheet()->SetCellValue($column . $row, $total);
     }
 } 
